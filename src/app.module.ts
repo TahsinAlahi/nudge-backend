@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import configuration from './config/configuration';
 import { envValidationSchema } from './config/envValidationSchema';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { envValidationSchema } from './config/envValidationSchema';
       cache: true,
       validationSchema: envValidationSchema,
     }),
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
