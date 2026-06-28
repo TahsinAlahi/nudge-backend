@@ -19,6 +19,7 @@
 | 8 | [Docker & Deployment](docker-deployment.md) | Docker Compose, multi-stage build, prod |
 | 9 | [Transaction Modeling](transaction-modeling.md) | INCOME/EXPENSE/TRANSFER in one table |
 | 10 | [Recurring Transactions Design](recurring-transactions-design.md) | Scope, auto-creation, account deletion |
+| 11 | [Prisma Migrations](prisma-migrations.md) | dev vs push vs deploy, when to use each |
 
 ---
 
