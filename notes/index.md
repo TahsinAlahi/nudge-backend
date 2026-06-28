@@ -20,6 +20,7 @@
 | 9 | [Transaction Modeling](transaction-modeling.md) | INCOME/EXPENSE/TRANSFER in one table |
 | 10 | [Recurring Transactions Design](recurring-transactions-design.md) | Scope, auto-creation, account deletion |
 | 11 | [Prisma Migrations](prisma-migrations.md) | dev vs push vs deploy, when to use each |
+| 12 | [Prisma Module & Driver Adapter](prisma-module-and-adapter.md) | PrismaPg, @Global(), lifecycle |
 
 ---
 
