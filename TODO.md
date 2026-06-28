@@ -23,19 +23,21 @@
 - [x] Install and configure Prisma ORM
 - [x] Set up PostgreSQL connection
 - [x] Create initial migration
+- [ ] Implement PrismaService (wraps PrismaClient for NestJS DI — currently a stub)
 - [ ] Seed development database
-- [ ] Configure database indexes
-- [x] Configure soft delete strategy (User model has isDeleted + deletedAt)
+- [x] Configure database indexes
+- [x] Configure soft delete strategy
 
 ### Core Entities
 
 - [x] User
-- [ ] Account
-- [ ] Transaction
-- [ ] Category
-- [ ] Budget
-- [ ] BudgetCategory
-- [ ] RecurringTransaction
+- [x] Account
+- [x] Transaction
+- [x] Category
+- [x] Budget
+- [x] RecurringTransaction
+- [x] RefreshToken
+- [ ]BudgetCategory (removed from schema - not seemed to be useful right now)
 
 ---
 
@@ -44,7 +46,7 @@
 ### User Management
 
 - [ ] Register user
-- [ ] Login (LoginDto scaffolded, no route/service yet)
+- [ ] Login user
 - [ ] Refresh token flow
 - [ ] Logout user
 
@@ -52,7 +54,7 @@
 
 - [ ] Password hashing (bcrypt)
 - [ ] JWT access token
-- [ ] JWT refresh token
+- [x] JWT refresh token (RefreshToken model + schema done)
 - [ ] Route guards
 - [ ] Role-based authorization
 
@@ -74,12 +76,12 @@
 - [ ] Get account details
 - [ ] Get all user accounts
 
-### Account Types
+### Account Types (enums defined in schema)
 
-- [ ] Cash
-- [ ] Bank
-- [ ] Mobile Banking
-- [ ] Credit Card
+- [x] Cash
+- [x] Bank
+- [x] Mobile Banking
+- [x] Credit Card
 
 ### Balance
 
@@ -118,11 +120,11 @@
 - [ ] Get transaction
 - [ ] Get transaction list
 
-### Transaction Types
+### Transaction Types (enums defined in schema)
 
-- [ ] Income
-- [ ] Expense
-- [ ] Transfer
+- [x] Income
+- [x] Expense
+- [x] Transfer
 
 ### Features
 
@@ -154,8 +156,8 @@
 
 ### Budget Features
 
-- [ ] Monthly budgets
-- [ ] Category budgets
+- [ ] Monthly budgets (Budget model done at schema level)
+- [ ] Category budgets (BudgetCategory is removed for now )
 - [ ] Budget usage tracking
 - [ ] Remaining budget calculation
 
@@ -202,17 +204,18 @@
 
 ## Phase 9: Recurring Transactions
 
-### CRUD
+### CRUD (RecurringTransaction model + enums done at schema level)
 
 - [ ] Create recurring transaction
 - [ ] Update recurring transaction
 - [ ] Delete recurring transaction
 
-### Scheduling
+### Scheduling (RecurringFrequency enum in schema: DAILY, WEEKLY, MONTHLY, YEARLY)
 
-- [ ] Daily recurrence
-- [ ] Weekly recurrence
-- [ ] Monthly recurrence
+- [x] Daily recurrence
+- [x] Weekly recurrence
+- [x] Monthly recurrence
+- [x] Yearly recurrence
 
 ### Automation
 
@@ -232,6 +235,7 @@
 
 - [ ] Notification entity
 - [ ] Read/unread status
+- [x] RefreshToken entity
 
 ---
 
