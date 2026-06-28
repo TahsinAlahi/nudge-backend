@@ -17,6 +17,8 @@
 | 6 | [Error Handling](error-handling.md) | Exception filters, structured error responses |
 | 7 | [Database Design Decisions](database-design.md) | UUID vs CUID vs auto-increment, PK choices |
 | 8 | [Docker & Deployment](docker-deployment.md) | Docker Compose, multi-stage build, prod |
+| 9 | [Transaction Modeling](transaction-modeling.md) | INCOME/EXPENSE/TRANSFER in one table |
+| 10 | [Recurring Transactions Design](recurring-transactions-design.md) | Scope, auto-creation, account deletion |
 
 ---
 

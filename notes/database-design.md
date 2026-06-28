@@ -42,10 +42,10 @@ migrate the column to `BIGINT`.
 
 ---
 
-## Option 2: UUID (v4)
+## Option 2: UUID v4
 
 ```prisma
-id  String  @id @default(uuid())
+id  String  @id @default(uuid(4))
 ```
 
 UUID v4 is a 128-bit random value: `550e8400-e29b-41d4-a716-446655440000`
@@ -65,18 +65,24 @@ UUID v4 is a 128-bit random value: `550e8400-e29b-41d4-a716-446655440000`
 
 ---
 
-## Option 3: UUID v7 (Time-Sorted UUID)
+## Option 3: UUID v7 (Time-Sorted UUID) — what we use
+
+```prisma
+id  String  @id @default(uuid(7))
+```
 
 UUID v7 is the same 128 bits but: **timestamp prefix + random suffix**.
 
 **Pros:**
 - Same uniqueness + unguessability as UUID v4
-- **Sortable by creation time** — no B-tree fragmentation
+- **Sortable by creation time** — no B-tree index fragmentation
 - **Monotonically increasing** — database-friendly
+- **Built into Prisma 7** — `@default(uuid(7))` generates v7 natively
+  (Prisma 6 and earlier only supported v4)
 
 **Cons:**
-- Newer standard — Prisma doesn't have `@default(uuid7())` yet
-- Need to generate on the application side or via DB extension
+- Slightly larger than an int (but same size as UUID v4)
+- Newer standard (RFC 9562, 2024) — less ecosystem tooling maturity
 
 ---
 
@@ -138,24 +144,26 @@ For a NestJS backend in early development:
 |----------|---------|
 | Auto-increment | ❌ Exposes record count, enumeration risk |
 | UUID v4 | ✅ Fine — simple, safe, Prisma built-in |
-| UUID v7 | ✅ Better, but needs manual generation |
-| CUID | ✅ Good — sortable, URL-safe |
+| UUID v7 | ✅ Best — sortable, no fragmentation, native in Prisma 7 |
+| CUID | ✅ Good — sortable, URL-safe, but non-standard |
 | Dual-ID | ❌ Premature complexity |
 
-**Start with UUID v4** (already in the schema). It's simple, safe, and Prisma
-supports it natively. If performance ever becomes an issue, switch to UUID v7
-or CUID — both are backward-compatible (same `String` type).
+**We use UUID v7** via `@default(uuid(7))`. It gives us the best of both
+worlds: globally unique like v4, sortable like auto-increment. No reason to
+change unless profiling proves otherwise.
 
 ---
 
 ## Key Points to Remember
 
-- **`@default(uuid())`** — Prisma generates UUID v4
-- **Sortable IDs** are better for database performance (CUID, UUID v7)
+- **`@default(uuid(7))`** — Prisma 7 generates UUID v7 (time-sorted, no
+  index fragmentation)
+- **UUID v4** (`uuid(4)` or `uuid()`) — random, causes B-tree fragmentation
+- **Sortable IDs** are better for database performance
 - **INT overflows at 2.1B** — PostgreSQL throws, doesn't wrap
 - **`BIGINT`** — use `@db.BigInt` for 64-bit if you must auto-increment
 - **Dual-ID is a tradeoff** — cleaner joins vs. code complexity
-- **For this project: UUID is fine** — don't optimize prematurely
+- **For this project: UUID v7 is the sweet spot** — don't optimize prematurely
 
 ---
 
