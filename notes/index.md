@@ -21,6 +21,7 @@
 | 10 | [Recurring Transactions Design](recurring-transactions-design.md) | Scope, auto-creation, account deletion |
 | 11 | [Prisma Migrations](prisma-migrations.md) | dev vs push vs deploy, when to use each |
 | 12 | [Prisma Module & Driver Adapter](prisma-module-and-adapter.md) | PrismaPg, @Global(), lifecycle |
+| 13 | [Runtime vs Compile-time, Validation Pipeline](runtime-vs-compiletime-validation.md) | Classes vs interfaces, decorators, ValidationPipe flow, URI versioning |
 
 ---
 
