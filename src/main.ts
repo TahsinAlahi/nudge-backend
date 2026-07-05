@@ -19,7 +19,7 @@ async function bootstrap() {
     new ValidationPipe({
       whitelist: true,
       transform: true,
-      forbidNonWhitelisted: true, // TODO: remove this or whitelist true because after stripping there won't be any errors
+      forbidNonWhitelisted: false, // TODO: remove this or whitelist true because after stripping there won't be any errors
     })
   );
   app.enableVersioning({
