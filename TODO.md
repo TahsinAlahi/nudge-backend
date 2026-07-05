@@ -23,7 +23,7 @@
 - [x] Install and configure Prisma ORM
 - [x] Set up PostgreSQL connection
 - [x] Create initial migration
-- [ ] Implement PrismaService (wraps PrismaClient for NestJS DI — currently a stub)
+- [x] Implement PrismaService (wraps PrismaClient for NestJS DI with PrismaPg adapter + lifecycle hooks)
 - [ ] Seed development database
 - [x] Configure database indexes
 - [x] Configure soft delete strategy
@@ -45,22 +45,22 @@
 
 ### User Management
 
-- [ ] Register user
-- [ ] Login user
-- [ ] Refresh token flow
+- [x] Register user (with duplicate email check, Prisma select to exclude password)
+- [x] Login user (validates credentials, returns JWT access token)
+- [ ] Refresh token flow (RefreshToken model ready, endpoint not implemented)
 - [ ] Logout user
 
 ### Security
 
-- [ ] Password hashing (bcrypt)
-- [ ] JWT access token
+- [x] Password hashing (bcrypt, 10 rounds)
+- [x] JWT access token (JwtModule with registerAsync + ConfigService factory)
 - [x] JWT refresh token (RefreshToken model + schema done)
-- [ ] Route guards
+- [x] Route guards (JwtAuthGuard + JwtStrategy with Prisma user lookup + soft-delete check)
 - [ ] Role-based authorization
 
 ### User Features
 
-- [ ] Get profile
+- [ ] Get profile (JwtStrategy returns user data, controller endpoint pending)
 - [ ] Update profile
 - [ ] Change password
 
@@ -243,7 +243,7 @@
 
 At this point you should have:
 
-- [ ] Authentication
+- [ ] Authentication (register + login + guard done; refresh, logout, profile pending)
 - [ ] Accounts
 - [ ] Categories
 - [ ] Transactions

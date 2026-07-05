@@ -71,16 +71,19 @@ Generated client output: `src/generated/prisma/` — committed per `.gitignore` 
 - E2E tests at `test/app.e2e-spec.ts` use `test/jest-e2e.json` config (separate from Jest config in `package.json`)
 - `deleteOutDir: false` in nest-cli — `dist/` is not cleaned on build
 
-## Docs & learning preferences
+## Learning preferences
 
-Concept notes live in `notes/`. When creating or updating them:
+Learning notes live in `notes/`. When creating or updating them:
 
-- **Learning journey style** — explain _why_ things work, not just _what_ they do. Include tradeoffs and rationale behind decisions.
+- **Learning journey style** — capture what was learned and _why_ it works, not just _what_ it does. Include the reasoning, tradeoffs, and decisions made during implementation.
 - **Code examples** — use real code from the project, not generic snippets.
-- **Key points section** — end each doc with a bullet list for quick revisiting.
-- **Practical over theoretical** — focus on what's actually used in this project. Skip generic framework tutorials.
-- **Comparisons** — when covering a choice (example: UUID vs CUID, normalized vs denormalized), show pros/cons in a table.
-- **Keep concise** — one topic per file, clear headings, scannable structure.
+- **Key points section** — end each note with a bullet list for quick revisiting.
+- **Practical over theoretical** — focus on what was actually learned or applied in this project. Skip generic framework tutorials unless they directly support the implementation.
+- **Comparisons** — when learning about alternative approaches (for example: UUID vs CUID, normalized vs denormalized), include a pros/cons table.
+- **Keep concise** — one learning topic per file, with clear headings and a scannable structure.
+- **Track learning chronologically** — each development session or commit can produce new note files that document what was learned during that session.
+- **One topic per note** — don't combine unrelated learnings into a single file. Each note should answer one question or document one idea, decision, or discovery.
+- **Document discoveries** — include implementation details, mistakes, debugging insights, architectural decisions, and "aha" moments when they're worth remembering.
 
 ### Additional Guidelines
 

@@ -23,6 +23,8 @@
 | 12 | [Prisma Module & Driver Adapter](prisma-module-and-adapter.md) | PrismaPg, @Global(), lifecycle |
 | 13 | [Runtime vs Compile-time, Validation Pipeline](runtime-vs-compiletime-validation.md) | Classes vs interfaces, decorators, ValidationPipe flow, URI versioning |
 | 14 | [Auth Module Implementation](auth-implementation.md) | Passport JWT in practice, factories, payload conventions, Prisma select pitfalls |
+| 15 | [Global Guards and @Public()](guards-decorators-and-reflection.md) | APP_GUARD, Reflector, @Public() decorator pattern |
+| 16 | [Custom Parameter Decorators](custom-parameter-decorators.md) | createParamDecorator, @CurrentUser(), Express request typing |
 
 ---
 

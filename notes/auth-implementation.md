@@ -211,6 +211,22 @@ const { password, ...userWithoutPassword } = user;
 This is useful when `validateUser()` needs the password internally but callers
 shouldn't get it.
 
+### Extracting it as a reusable helper
+
+```typescript
+// auth.service.ts
+private removePasswordFromUser(user: User): Omit<User, 'password'> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { password: _, ...result } = user;
+  return result;
+}
+```
+
+Now any method that needs to strip the password can call this instead of
+repeating the destructure. Both `validateUser()` and `checkValidityOfUser()`
+use it. If you later add more sensitive fields (e.g., `refreshToken`), you
+only change one place.
+
 ---
 
 ## Error Message Hygiene

@@ -131,6 +131,52 @@ npx prisma generate
 
 ---
 
+## findUnique vs findFirst
+
+### The difference
+
+| Method | Where clause accepts | Use case |
+|--------|---------------------|----------|
+| `findUnique` | Only `@id`, `@unique`, or `@@unique` fields | Exact lookup by unique identifier |
+| `findFirst` | Any fields, including non-unique | Lookup with additional filters |
+
+### The common mistake
+
+```typescript
+// ❌ isDeleted is NOT a unique field — Prisma throws
+prisma.user.findUnique({
+  where: { id, email, isDeleted: false },
+});
+```
+
+`findUnique` validates that every field in `where` is part of a unique
+constraint. `isDeleted` is not unique, so Prisma rejects the query.
+
+### The fix
+
+```typescript
+// ✅ Use findUnique for the lookup, then filter manually
+const user = await prisma.user.findUnique({ where: { id } });
+if (!user || user.isDeleted) return null;
+```
+
+**Or** use `findFirst` when you don't have a unique constraint for the filter:
+
+```typescript
+prisma.user.findFirst({
+  where: { id, email, isDeleted: false },
+});
+```
+
+`findFirst` accepts any fields in `where` — no uniqueness constraint required.
+
+### When to use each
+
+- `findUnique` is **faster** (direct index lookup) — use for primary lookups
+- `findFirst` is **more flexible** — use when filtering by non-unique fields
+
+---
+
 ## Key Points to Remember
 
 - **`npx prisma generate`** — run after every `git pull` that might have new
