@@ -8,6 +8,7 @@ import { HealthModule } from './health/health.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { JwtAuthGuard } from './modules/auth/jwt-auth.guard';
+import { ApiConfigModule } from './modules/api-config/api-config.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { JwtAuthGuard } from './modules/auth/jwt-auth.guard';
     HealthModule,
     PrismaModule,
     AuthModule,
+    ApiConfigModule,
   ],
   controllers: [AppController],
   providers: [

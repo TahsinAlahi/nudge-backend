@@ -14,6 +14,14 @@ export class ApiConfigService {
   }
 
   get isDevelopment(): boolean {
-    return this.nodeEnv === 'development';
+    return this.configService.getOrThrow('nodeEnv') === 'development';
+  }
+
+  get jwtAccessSecret(): string {
+    return this.configService.getOrThrow('jwt.secret');
+  }
+
+  get dbUrl(): string {
+    return this.configService.getOrThrow('database.url');
   }
 }
