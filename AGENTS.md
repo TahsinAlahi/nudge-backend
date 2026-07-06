@@ -71,6 +71,27 @@ Generated client output: `src/generated/prisma/` — committed per `.gitignore` 
 - E2E tests at `test/app.e2e-spec.ts` use `test/jest-e2e.json` config (separate from Jest config in `package.json`)
 - `deleteOutDir: false` in nest-cli — `dist/` is not cleaned on build
 
+## Documentation preferences
+
+JSDoc comments are written using standard tags:
+
+```typescript
+/**
+ * What this function does and any non-obvious design details.
+ *
+ * @param paramName - Description of the parameter.
+ * @returns Description of the return value.
+ * @throws {HttpException} status - When and why this error is thrown.
+ */
+```
+
+- Only add doc comments when explicitly instructed with **"add doc comments"**.
+- Do not add doc comments unasked, even as part of other tasks.
+- Use `@description` for class-level JSDoc on controllers, modules, and strategies.
+- Use `@param`, `@returns`, `@throws` on methods.
+- Keep descriptions concise and focused on non-obvious behavior.
+- DTO files do not need JSDoc.
+
 ## Learning preferences
 
 Learning notes live in `notes/`. When creating or updating them:

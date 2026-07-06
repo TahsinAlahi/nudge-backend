@@ -15,10 +15,22 @@ import { Public } from '@/common/decorators/public.decorator';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import type { UserRequest } from '@/common/decorators/current-user.decorator';
 
+/**
+ * REST controller for authentication-related endpoints.
+ *
+ * Routes: register, login, refresh, logout are annotated with `@Public()` and bypass
+ * the global JwtAuthGuard. The profile route requires a valid JWT access token.
+ */
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  /**
+   * Registers a new user account and returns an access + refresh token pair.
+   *
+   * @param dto - Registration payload (name, email, password, avatar).
+   * @returns The created user profile along with accessToken and refreshToken.
+   */
   @Public()
   @HttpCode(HttpStatus.CREATED)
   @Post('register')
@@ -26,6 +38,12 @@ export class AuthController {
     return this.authService.register(dto);
   }
 
+  /**
+   * Authenticates an existing user with email and password.
+   *
+   * @param dto - Login credentials (email, password).
+   * @returns An accessToken and a refreshToken.
+   */
   @Public()
   @HttpCode(HttpStatus.OK)
   @Post('login')
@@ -33,6 +51,13 @@ export class AuthController {
     return this.authService.login(dto);
   }
 
+  /**
+   * Exchanges a valid refresh token for a new access + refresh token pair.
+   * The old refresh token is revoked (rotation).
+   *
+   * @param dto - Object containing the refresh token to redeem.
+   * @returns A new accessToken and refreshToken.
+   */
   @Public()
   @HttpCode(HttpStatus.OK)
   @Post('refresh')
@@ -40,6 +65,11 @@ export class AuthController {
     return this.authService.refreshAccessToken(dto.refreshToken);
   }
 
+  /**
+   * Revokes a refresh token so it can no longer be used.
+   *
+   * @param dto - Object containing the refresh token to revoke.
+   */
   @Public()
   @HttpCode(HttpStatus.OK)
   @Post('logout')
@@ -47,6 +77,13 @@ export class AuthController {
     return this.authService.logout(dto.refreshToken);
   }
 
+  /**
+   * Returns the currently authenticated user's profile.
+   * The password field is stripped from the response.
+   *
+   * @param user - The authenticated user injected by the `@CurrentUser()` decorator.
+   * @returns The user object without the password field.
+   */
   @HttpCode(HttpStatus.OK)
   @Get('profile')
   async profile(@CurrentUser() user: UserRequest) {

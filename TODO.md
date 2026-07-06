@@ -47,8 +47,8 @@
 
 - [x] Register user (with duplicate email check, Prisma select to exclude password)
 - [x] Login user (validates credentials, returns JWT access token)
-- [ ] Refresh token flow (RefreshToken model ready, endpoint not implemented)
-- [ ] Logout user
+- [x] Refresh token flow (opaque token, SHA-256 hashed before storage, rotation with Prisma transaction)
+- [x] Logout user (revoke specific refresh token)
 
 ### Security
 
@@ -60,7 +60,7 @@
 
 ### User Features
 
-- [ ] Get profile (JwtStrategy returns user data, controller endpoint pending)
+- [x] Get profile (JwtStrategy returns user data, controller endpoint implemented)
 - [ ] Update profile
 - [ ] Change password
 
@@ -243,7 +243,7 @@
 
 At this point you should have:
 
-- [ ] Authentication (register + login + guard done; refresh, logout, profile pending)
+- [x] Authentication (register, login, refresh, logout, profile + JWT guard)
 - [ ] Accounts
 - [ ] Categories
 - [ ] Transactions
