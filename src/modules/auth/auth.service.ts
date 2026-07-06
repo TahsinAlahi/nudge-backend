@@ -5,6 +5,12 @@ import { RegisterDto } from './dto/register.dto';
 import * as bcrypt from 'bcrypt';
 import { LoginDto } from './dto/login.dto';
 import { User } from '@/generated/prisma/client';
+import * as crypto from 'node:crypto';
+
+export type JwtPayload = {
+  sub: string;
+  email: string;
+};
 
 @Injectable()
 export class AuthService {
@@ -13,9 +19,10 @@ export class AuthService {
     private readonly jwtService: JwtService
   ) {}
 
-  // for internal uses
   private async validateUserData(email: string, password: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.prisma.user.findUnique({
+      where: { email, isDeleted: false },
+    });
     if (!user) {
       return null;
     }
@@ -44,47 +51,83 @@ export class AuthService {
   }
 
   async checkValidityOfUser(
-    id: string,
-    email: string
+    id: string
   ): Promise<null | Omit<User, 'password'>> {
-    const user = await this.prisma.user.findUnique({ where: { id, email } });
+    const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user || user.isDeleted) return null;
 
     return this.removePasswordFromUser(user);
   }
 
-  private generateToken(payload: object) {
+  private generateToken(payload: JwtPayload) {
     return this.jwtService.sign(payload);
   }
 
-  // TODO: register will return token so user can login at the same time
-  async register(dto: RegisterDto) {
-    const doesUserExist = await this.prisma.user.findUnique({
-      where: { email: dto.email },
-      select: { id: true },
-    });
+  private async generateRefreshToken(payload: JwtPayload) {
+    const token = crypto.randomBytes(40).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
-    if (doesUserExist) {
-      throw new HttpException('Email is already in use', HttpStatus.CONFLICT);
-    }
-
-    const saltingRound = 10;
-    const encryptedPassword = await bcrypt.hash(dto.password, saltingRound);
-    return this.prisma.user.create({
+    await this.prisma.refreshToken.create({
       data: {
-        name: dto.name,
-        email: dto.email,
-        password: encryptedPassword,
-        avatar: dto.avatar,
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        avatar: true,
-        createdAt: true,
+        token: hashedToken,
+        userId: payload.sub,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       },
     });
+    return token;
+  }
+
+  async register(dto: RegisterDto) {
+    const saltRounds = 10;
+    const encryptedPassword = await bcrypt.hash(dto.password, saltRounds);
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      const doesUserExist = await tx.user.findUnique({
+        where: { email: dto.email },
+        select: { id: true },
+      });
+
+      if (doesUserExist) {
+        throw new HttpException('Email is already in use', HttpStatus.CONFLICT);
+      }
+
+      const user = await tx.user.create({
+        data: {
+          name: dto.name,
+          email: dto.email,
+          password: encryptedPassword,
+          avatar: dto.avatar,
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          avatar: true,
+          createdAt: true,
+        },
+      });
+
+      const payload: JwtPayload = { sub: user.id, email: user.email };
+      const accessToken = this.generateToken(payload);
+
+      const token = crypto.randomBytes(40).toString('hex');
+      const hashedToken = crypto
+        .createHash('sha256')
+        .update(token)
+        .digest('hex');
+
+      await tx.refreshToken.create({
+        data: {
+          token: hashedToken,
+          userId: payload.sub,
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        },
+      });
+
+      return { user, accessToken, refreshToken: token };
+    });
+
+    return result;
   }
 
   async login(dto: LoginDto) {
@@ -93,20 +136,83 @@ export class AuthService {
       throw new HttpException('Invalid Credentials', HttpStatus.UNAUTHORIZED);
     }
 
-    const payload = { sub: user.id, email: user.email };
+    const payload: JwtPayload = { sub: user.id, email: user.email };
     return {
       accessToken: this.generateToken(payload),
+      refreshToken: await this.generateRefreshToken(payload),
     };
   }
 
-  async profile({ email, id }: { email?: string; id?: string }) {
+  async profile({ id }: { id?: string }) {
     const user = await this.prisma.user.findUnique({
-      where: { email, id, isDeleted: false },
+      where: { id, isDeleted: false },
     });
     if (!user) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
 
     return this.removePasswordFromUser(user);
+  }
+
+  async refreshAccessToken(refreshToken: string) {
+    const hashedRefreshToken = crypto
+      .createHash('sha256')
+      .update(refreshToken)
+      .digest('hex');
+
+    const sessionToken = await this.prisma.refreshToken.findFirst({
+      where: {
+        token: hashedRefreshToken,
+        expiresAt: { gt: new Date() },
+      },
+    });
+
+    if (!sessionToken) {
+      throw new HttpException('Invalid refresh token', HttpStatus.UNAUTHORIZED);
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: sessionToken.userId, isDeleted: false },
+    });
+
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    const payload: JwtPayload = { sub: user.id, email: user.email };
+    const accessToken = this.generateToken(payload);
+
+    const newToken = crypto.randomBytes(40).toString('hex');
+    const hashedNewToken = crypto
+      .createHash('sha256')
+      .update(newToken)
+      .digest('hex');
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.refreshToken.delete({ where: { id: sessionToken.id } });
+      await tx.refreshToken.create({
+        data: {
+          token: hashedNewToken,
+          userId: payload.sub,
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        },
+      });
+    });
+
+    return {
+      accessToken,
+      refreshToken: newToken,
+    };
+  }
+
+  async logout(refreshToken: string) {
+    const hashedRefreshToken = crypto
+      .createHash('sha256')
+      .update(refreshToken)
+      .digest('hex');
+
+    await this.prisma.refreshToken.deleteMany({
+      where: { token: hashedRefreshToken },
+    });
   }
 }

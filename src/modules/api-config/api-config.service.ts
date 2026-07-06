@@ -21,6 +21,10 @@ export class ApiConfigService {
     return this.configService.getOrThrow('jwt.secret');
   }
 
+  get jwtRefreshSecret(): string {
+    return this.configService.getOrThrow('jwt.refreshSecret');
+  }
+
   get dbUrl(): string {
     return this.configService.getOrThrow('database.url');
   }

@@ -18,10 +18,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: { sub: string; email: string }) {
-    const user = await this.authService.checkValidityOfUser(
-      payload.sub,
-      payload.email
-    );
+    const user = await this.authService.checkValidityOfUser(payload.sub);
 
     if (!user) {
       throw new HttpException("User doesn't exist", HttpStatus.UNAUTHORIZED);
