@@ -32,6 +32,10 @@ export class AccountsController {
     return this.accountsService.findAll(user.id);
   }
 
+  @Get('net-worth')
+  async netWorth(@CurrentUser() user: UserRequest) {
+    return this.accountsService.netWorth(user.id);
+  }
   @Get(':id')
   async findOne(@Param('id') id: string, @CurrentUser() user: UserRequest) {
     return this.accountsService.findOne(id, user.id);

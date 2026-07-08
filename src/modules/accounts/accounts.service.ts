@@ -27,6 +27,7 @@ export class AccountsService {
         balance: createAccount.balance ?? 0,
         userId,
       },
+      select: accountSelect,
     });
   }
 
@@ -69,5 +70,14 @@ export class AccountsService {
         deletedAt: new Date(),
       },
     });
+  }
+
+  async netWorth(userId: string) {
+    const netWorth = await this.prisma.account.aggregate({
+      where: { userId, isDeleted: false },
+      _sum: { balance: true },
+    });
+
+    return { netWorth: netWorth._sum.balance ?? 0 };
   }
 }

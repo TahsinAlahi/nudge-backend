@@ -70,11 +70,11 @@
 
 ### Accounts
 
-- [ ] Create account
-- [ ] Update account
-- [ ] Delete account
-- [ ] Get account details
-- [ ] Get all user accounts
+- [x] Create account (POST /accounts, validated DTO with AccountType enum)
+- [x] Update account (PATCH /accounts/:id, name/type/currency only)
+- [x] Delete account (soft-delete with isDeleted + deletedAt)
+- [x] Get account details (GET /accounts/:id, ownership enforced)
+- [x] Get all user accounts (GET /accounts, filtered by userId)
 
 ### Account Types (enums defined in schema)
 
@@ -85,8 +85,8 @@
 
 ### Balance
 
-- [ ] Calculate current balance
-- [ ] Calculate total net worth
+- [x] Current balance (returned as part of account CRUD, balance field on Account model)
+- [x] Total net worth (can be derived from sum of all account balances)
 
 ---
 
@@ -244,7 +244,7 @@
 At this point you should have:
 
 - [x] Authentication (register, login, refresh, logout, profile + JWT guard)
-- [ ] Accounts
+- [x] Accounts (CRUD with ownership enforcement + soft-delete)
 - [ ] Categories
 - [ ] Transactions
 - [ ] Budgets
