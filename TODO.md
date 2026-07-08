@@ -94,15 +94,15 @@
 
 ### Category CRUD
 
-- [ ] Create category
-- [ ] Update category
-- [ ] Delete category
-- [ ] Get categories
+- [x] Create category (POST /categories, validated DTO with TransactionType enum)
+- [x] Update category (PATCH /categories/:id, user-owned only, global categories are read-only)
+- [x] Delete category (soft-delete, user-owned only)
+- [x] Get categories (GET /categories, returns user's own + global categories)
 
 ### Category Types
 
-- [ ] Income categories
-- [ ] Expense categories
+- [x] Income categories (filter by type via findAll)
+- [x] Expense categories (filter by type via findAll)
 
 ### Defaults
 
@@ -245,7 +245,7 @@ At this point you should have:
 
 - [x] Authentication (register, login, refresh, logout, profile + JWT guard)
 - [x] Accounts (CRUD with ownership enforcement + soft-delete)
-- [ ] Categories
+- [x] Categories (CRUD with ownership enforcement + global category support)
 - [ ] Transactions
 - [ ] Budgets
 - [ ] Dashboard analytics
