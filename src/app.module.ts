@@ -9,6 +9,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { JwtAuthGuard } from './modules/auth/jwt-auth.guard';
 import { ApiConfigModule } from './modules/api-config/api-config.module';
+import { AccountsModule } from './modules/accounts/accounts.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { ApiConfigModule } from './modules/api-config/api-config.module';
     PrismaModule,
     AuthModule,
     ApiConfigModule,
+    AccountsModule,
   ],
   controllers: [AppController],
   providers: [
