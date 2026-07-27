@@ -25,6 +25,7 @@
 | 14 | [Auth Module Implementation](auth-implementation.md) | Passport JWT in practice, factories, payload conventions, Prisma select pitfalls |
 | 15 | [Global Guards and @Public()](guards-decorators-and-reflection.md) | APP_GUARD, Reflector, @Public() decorator pattern |
 | 16 | [Custom Parameter Decorators](custom-parameter-decorators.md) | createParamDecorator, @CurrentUser(), Express request typing |
+| 17 | [Prisma Seeding](prisma-seeding.md) | Seed configuration, idempotency, best practices |
 
 ---
 

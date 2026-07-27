@@ -106,7 +106,7 @@
 
 ### Defaults
 
-- [ ] Seed default categories
+- [x] Seed default categories
 
 ---
 
