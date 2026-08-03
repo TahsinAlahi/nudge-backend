@@ -26,6 +26,9 @@
 | 15 | [Global Guards and @Public()](guards-decorators-and-reflection.md) | APP_GUARD, Reflector, @Public() decorator pattern |
 | 16 | [Custom Parameter Decorators](custom-parameter-decorators.md) | createParamDecorator, @CurrentUser(), Express request typing |
 | 17 | [Prisma Seeding](prisma-seeding.md) | Seed configuration, idempotency, best practices |
+| 18 | [Transaction CRUD Service](transaction-crud-service.md) | Balance apply/reverse, soft delete, ownership scoping |
+| 19 | [Pagination with Prisma](prisma-pagination.md) | skip/take offset pagination, count, meta envelope |
+| 20 | [Batch $transaction vs Promise.all](prisma-batch-vs-promiseall.md) | Consistency vs concurrency for parallel queries |
 
 ---
 
