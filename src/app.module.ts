@@ -11,6 +11,7 @@ import { JwtAuthGuard } from './modules/auth/jwt-auth.guard';
 import { ApiConfigModule } from './modules/api-config/api-config.module';
 import { AccountsModule } from './modules/accounts/accounts.module';
 import { CategoriesModule } from './modules/categories/categories.module';
+import { TransactionsModule } from './modules/transactions/transactions.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { CategoriesModule } from './modules/categories/categories.module';
     ApiConfigModule,
     AccountsModule,
     CategoriesModule,
+    TransactionsModule,
   ],
   controllers: [AppController],
   providers: [
