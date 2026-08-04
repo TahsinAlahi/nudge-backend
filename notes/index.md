@@ -29,6 +29,8 @@
 | 18 | [Transaction CRUD Service](transaction-crud-service.md) | Balance apply/reverse, soft delete, ownership scoping |
 | 19 | [Pagination with Prisma](prisma-pagination.md) | skip/take offset pagination, count, meta envelope |
 | 20 | [Batch $transaction vs Promise.all](prisma-batch-vs-promiseall.md) | Consistency vs concurrency for parallel queries |
+| 21 | [Double-Entry Transfers](transaction-double-entry.md) | A transfer is two linked transaction legs, not one row |
+| 22 | [Single-Row Transaction Models](single-row-transaction-model.md) | When one row per transfer works, its pros and cons |
 
 ---
 

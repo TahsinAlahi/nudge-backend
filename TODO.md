@@ -37,6 +37,7 @@
 - [x] Budget
 - [x] RecurringTransaction
 - [x] RefreshToken
+- [x] Transfer (double-entry transfer model: two Transaction legs linked via transferId, fromUserId/toUserId, status)
 - [ ]BudgetCategory (removed from schema - not seemed to be useful right now)
 
 ---
@@ -112,13 +113,28 @@
 
 ## Phase 5: Transactions
 
+> **Schema updated:** transfers now use double-entry — one `Transfer` row with two
+> linked `Transaction` legs (each with a `direction` IN/OUT, sharing a
+> `transferId`). The service still targets the old single-row model and needs rework.
+
 ### CRUD
 
-- [ ] Create transaction
-- [ ] Update transaction
-- [ ] Delete transaction
-- [ ] Get transaction
-- [ ] Get transaction list
+- [x] Create transaction (service: atomic balance update for INCOME/EXPENSE/TRANSFER, ownership checks)
+- [x] Update transaction (service: reverse old + apply new balance effects, auto-clears fromAccountId off TRANSFER)
+- [x] Delete transaction (service: soft-delete + balance reversal)
+- [x] Get transaction (service: findOne with ownership check)
+- [x] Get transaction list (service: findAll with filters + pagination)
+- [ ] Wire controller endpoints (POST/GET/PATCH/DELETE /transactions — controller is scaffold only)
+
+### Double-Entry Rework (schema done, service pending)
+
+- [ ] Rewrite create() to write two linked legs (IN/OUT) + a Transfer row in one $transaction
+- [ ] Allow inter-user transfers (drop same-user check; counterparty account can belong to anyone)
+- [ ] Rewrite update()/remove() to keep both legs of a transfer in sync
+- [ ] Simplify balance logic to one unconditional update per leg (IN += amount, OUT -= amount)
+- [ ] Swap fromAccountId for toAccountId in Create/Update DTOs; add direction handling
+- [ ] Update findAll/findOne to filter by accountId only (no fromAccountId OR)
+- [ ] Handle nullable categoryId for transfer legs
 
 ### Transaction Types (enums defined in schema)
 
@@ -128,20 +144,21 @@
 
 ### Features
 
-- [ ] Attach notes
+- [x] Attach notes
 - [ ] Transaction tags
-- [ ] Pagination
-- [ ] Sorting
-- [ ] Filtering by account
-- [ ] Filtering by category
-- [ ] Filtering by date
+- [x] Pagination (offset skip/take, data + meta envelope)
+- [x] Sorting (date desc)
+- [x] Filtering by account
+- [x] Filtering by category
+- [x] Filtering by date (startDate/endDate range)
+- [x] Filtering by type
 - [ ] Filtering by amount range
 
 ### Validation
 
-- [ ] Prevent invalid transfers
-- [ ] Validate account ownership
-- [ ] Validate balances
+- [x] Prevent invalid transfers (fromAccountId required, source != destination) — needs rework for toAccountId/direction model
+- [x] Validate account ownership
+- [ ] Validate balances (negative balance prevention not yet implemented)
 
 ---
 
@@ -246,7 +263,7 @@ At this point you should have:
 - [x] Authentication (register, login, refresh, logout, profile + JWT guard)
 - [x] Accounts (CRUD with ownership enforcement + soft-delete)
 - [x] Categories (CRUD with ownership enforcement + global category support)
-- [ ] Transactions
+- [x] Transactions (service layer done; controller endpoints pending)
 - [ ] Budgets
 - [ ] Dashboard analytics
 - [ ] Recurring transactions
@@ -330,4 +347,4 @@ At this point you should have:
 - [ ] Multi-currency support
 - [ ] Investment tracking
 - [ ] Forecasting engine
-- [ ] Double-entry accounting ledger
+- [ ] Full double-entry accounting ledger (transfers already use a double-entry model; a full debits/credits ledger for all types is future work)

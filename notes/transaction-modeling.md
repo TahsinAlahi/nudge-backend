@@ -1,5 +1,11 @@
 # Transaction Modeling
 
+> **Update:** this note documents the *original* single-row approach. We replaced
+> it with **double-entry** because inter-user transfers need two users per
+> transfer. See [transaction-double-entry.md](transaction-double-entry.md) for
+> the current model, and [single-row-transaction-model.md](single-row-transaction-model.md)
+> for when the single-row shape is still a valid choice.
+
 ## Why did we need this?
 
 When building a finance app, the most fundamental operation is recording a
