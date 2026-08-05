@@ -12,6 +12,7 @@ import { ApiConfigModule } from './modules/api-config/api-config.module';
 import { AccountsModule } from './modules/accounts/accounts.module';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
+import { TransfersModule } from './modules/transfers/transfers.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { TransactionsModule } from './modules/transactions/transactions.module';
     AccountsModule,
     CategoriesModule,
     TransactionsModule,
+    TransfersModule,
   ],
   controllers: [AppController],
   providers: [
