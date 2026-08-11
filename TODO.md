@@ -113,28 +113,36 @@
 
 ## Phase 5: Transactions
 
-> **Schema updated:** transfers now use double-entry — one `Transfer` row with two
-> linked `Transaction` legs (each with a `direction` IN/OUT, sharing a
-> `transferId`). The service still targets the old single-row model and needs rework.
+> **Model:** transfers use double-entry — one `Transfer` row with two linked
+> `Transaction` legs (each with a `direction` IN/OUT, sharing a `transferId`).
+> Transfers are created through the transfers module; the transactions module
+> handles INCOME/EXPENSE only.
 
 ### CRUD
 
-- [x] Create transaction (service: atomic balance update for INCOME/EXPENSE/TRANSFER, ownership checks)
-- [x] Update transaction (service: reverse old + apply new balance effects, auto-clears fromAccountId off TRANSFER)
-- [x] Delete transaction (service: soft-delete + balance reversal)
-- [x] Get transaction (service: findOne with ownership check)
-- [x] Get transaction list (service: findAll with filters + pagination)
-- [ ] Wire controller endpoints (POST/GET/PATCH/DELETE /transactions — controller is scaffold only)
+- [x] Create transaction (INCOME/EXPENSE, atomic balance update, ownership checks)
+- [x] Update transaction (reverse old + apply new balance effects, transfer legs immutable)
+- [x] Delete transaction (soft-delete + balance reversal, transfer legs immutable)
+- [x] Get transaction (findOne with ownership check)
+- [x] Get transaction list (findAll with filters + pagination)
+- [x] Wire controller endpoints (POST/GET/PATCH/DELETE /transactions)
 
-### Double-Entry Rework (schema done, service pending)
+### Double-Entry Rework
 
-- [ ] Rewrite create() to write two linked legs (IN/OUT) + a Transfer row in one $transaction
-- [ ] Allow inter-user transfers (drop same-user check; counterparty account can belong to anyone)
-- [ ] Rewrite update()/remove() to keep both legs of a transfer in sync
-- [ ] Simplify balance logic to one unconditional update per leg (IN += amount, OUT -= amount)
-- [ ] Swap fromAccountId for toAccountId in Create/Update DTOs; add direction handling
-- [ ] Update findAll/findOne to filter by accountId only (no fromAccountId OR)
-- [ ] Handle nullable categoryId for transfer legs
+- [x] Split transfers into two legs (IN/OUT) + a Transfer row in one $transaction (transfers module)
+- [x] Allow inter-user transfers (counterparty account can belong to anyone)
+- [x] Keep transfer legs immutable via the transactions endpoints (update/remove blocked)
+- [x] Simplify balance logic to one unconditional update per leg (IN += amount, OUT -= amount)
+- [x] Filter account queries by accountId only (no fromAccountId OR)
+- [x] Nullable categoryId for transfer legs
+- [ ] Remove dead fromAccountId field from transaction DTOs (schema already dropped it)
+
+### Transfers module (service done, controller pending)
+
+- [x] Create transfer (ownership + insufficient funds checks)
+- [x] List/get transfers (scoped to fromUserId/toUserId)
+- [ ] Wire transfer controller endpoints
+- [ ] Transfer cancel/refund + status workflow (update/remove are placeholders; revisit with PENDING/COMPLETED/FAILED + queues)
 
 ### Transaction Types (enums defined in schema)
 
@@ -156,9 +164,19 @@
 
 ### Validation
 
-- [x] Prevent invalid transfers (fromAccountId required, source != destination) — needs rework for toAccountId/direction model
+- [x] Prevent invalid transfers (source != destination, source required; transfers use toAccountId via CreateTransferDto)
 - [x] Validate account ownership
 - [ ] Validate balances (negative balance prevention not yet implemented)
+
+---
+
+## Response Serialization
+
+> Shrink API response payloads using ClassSerializerInterceptor + class-transformer.
+
+- [ ] Add ClassSerializerInterceptor (global or per-module)
+- [ ] Create response DTOs with @Exclude/@Expose/@Transform to strip heavy or unnecessary fields
+- [ ] Apply to transaction list/detail responses to reduce payload size
 
 ---
 
@@ -263,7 +281,7 @@ At this point you should have:
 - [x] Authentication (register, login, refresh, logout, profile + JWT guard)
 - [x] Accounts (CRUD with ownership enforcement + soft-delete)
 - [x] Categories (CRUD with ownership enforcement + global category support)
-- [x] Transactions (service layer done; controller endpoints pending)
+- [x] Transactions (service + controller endpoints done; transfers via separate module)
 - [ ] Budgets
 - [ ] Dashboard analytics
 - [ ] Recurring transactions
