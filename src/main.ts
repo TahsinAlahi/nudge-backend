@@ -8,6 +8,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: new ConsoleLogger({
       prefix: 'Nudge',
+      logLevels: ['error', 'warn', 'fatal', 'debug'], //reduce the noise
       // json: true,
       // colors: true,
       // compact: false,

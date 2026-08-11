@@ -30,7 +30,16 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         ? exception.getResponse()
         : 'Internal Server Error';
 
-    this.logger.error(`Error: ${request?.url} - ${JSON.stringify(message)}`);
+    if (exception instanceof HttpException) {
+      this.logger.error({
+        name: exception.name,
+        message: `Error: ${request?.url} - ${JSON.stringify(message)}`,
+        stack: exception.stack,
+      });
+    } else {
+      console.error(exception);
+      this.logger.error(`Error: ${request?.url} - ${JSON.stringify(message)}`);
+    }
 
     response.status(status).json({
       statusCode: status,
