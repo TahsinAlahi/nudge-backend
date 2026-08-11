@@ -3,53 +3,47 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { TransactionQueryDto } from './dto/transaction-query.dto';
-import { Prisma, TransactionType } from '@/generated/prisma/client';
+import { Direction, Prisma, TransactionType } from '@/generated/prisma/client';
 
+/**
+ * @description Handles INCOME and EXPENSE transactions. Transfers are created
+ * through the transfers module and their legs are immutable here.
+ */
 @Injectable()
 export class TransactionsService {
   constructor(private readonly prisma: PrismaService) {}
 
   private readonly include = {
     account: true,
-    fromAccount: true,
     category: true,
+    transfer: true,
   };
 
+  /**
+   * Creates an INCOME or EXPENSE transaction and applies its balance effect
+   * atomically within a database transaction.
+   *
+   * @param userId - The id of the authenticated user.
+   * @param dto - The validated payload for the new transaction.
+   * @returns The created transaction including its account, category, and transfer relation.
+   * @throws {HttpException} 400 - When the type is TRANSFER; those go through the transfers endpoint.
+   * @throws {HttpException} 404 - When the account is missing, soft-deleted, or not owned by the user.
+   * @throws {HttpException} 404 - When the category is missing, soft-deleted, or neither the user's nor global.
+   */
   async create(userId: string, dto: CreateTransactionDto) {
+    if (dto.type === TransactionType.TRANSFER) {
+      throw new HttpException(
+        'Transfers are created through the transfers endpoint',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const account = await tx.account.findUnique({
-        where: { id: dto.accountId },
+        where: { id: dto.accountId, isDeleted: false, userId: userId },
       });
-      if (!account || account.isDeleted || account.userId !== userId) {
+      if (!account) {
         throw new HttpException('Account not found', HttpStatus.NOT_FOUND);
-      }
-
-      if (dto.type === TransactionType.TRANSFER) {
-        if (!dto.fromAccountId) {
-          throw new HttpException(
-            'Source account is required for transfers',
-            HttpStatus.BAD_REQUEST
-          );
-        }
-        if (dto.fromAccountId === dto.accountId) {
-          throw new HttpException(
-            'Source and destination accounts must be different',
-            HttpStatus.BAD_REQUEST
-          );
-        }
-        const fromAccount = await tx.account.findUnique({
-          where: { id: dto.fromAccountId },
-        });
-        if (
-          !fromAccount ||
-          fromAccount.isDeleted ||
-          fromAccount.userId !== userId
-        ) {
-          throw new HttpException(
-            'Source account not found',
-            HttpStatus.NOT_FOUND
-          );
-        }
       }
 
       const category = await tx.category.findFirst({
@@ -63,14 +57,15 @@ export class TransactionsService {
         throw new HttpException('Category not found', HttpStatus.NOT_FOUND);
       }
 
+      const direction = this.directionForType(dto.type);
+
       const transaction = await tx.transaction.create({
         data: {
           accountId: dto.accountId,
-          fromAccountId:
-            dto.type === TransactionType.TRANSFER ? dto.fromAccountId : null,
           userId,
           categoryId: dto.categoryId,
           type: dto.type,
+          direction,
           amount: dto.amount,
           note: dto.note,
           date: dto.date,
@@ -78,18 +73,20 @@ export class TransactionsService {
         include: this.include,
       });
 
-      await this.applyBalanceEffects(
-        tx,
-        dto.type,
-        dto.amount,
-        dto.accountId,
-        dto.fromAccountId
-      );
+      await this.applyBalanceEffects(tx, transaction);
 
       return transaction;
     });
   }
 
+  /**
+   * Lists the user's non-deleted transactions with optional filters and
+   * offset pagination.
+   *
+   * @param userId - The id of the authenticated user.
+   * @param query - Filter (account/type/category/date range) and pagination (page/limit) options.
+   * @returns An envelope with the transaction rows and pagination metadata.
+   */
   async findAll(userId: string, query: TransactionQueryDto) {
     const where: Prisma.TransactionWhereInput = {
       userId,
@@ -126,6 +123,14 @@ export class TransactionsService {
     };
   }
 
+  /**
+   * Fetches a single transaction owned by the user.
+   *
+   * @param userId - The id of the authenticated user.
+   * @param id - The id of the transaction.
+   * @returns The transaction including its account, category, and transfer relation.
+   * @throws {HttpException} 404 - When the transaction is not found or not owned by the user.
+   */
   async findOne(userId: string, id: string) {
     const transaction = await this.prisma.transaction.findFirst({
       where: { id, userId, isDeleted: false },
@@ -137,6 +142,17 @@ export class TransactionsService {
     return transaction;
   }
 
+  /**
+   * Updates an INCOME/EXPENSE transaction, reversing the old balance effect and
+   * applying the new one atomically. Transfer legs are immutable here.
+   *
+   * @param userId - The id of the authenticated user.
+   * @param id - The id of the transaction to update.
+   * @param dto - The fields to change.
+   * @returns The updated transaction including its account, category, and transfer relation.
+   * @throws {HttpException} 400 - When the transaction is a transfer leg or the new type is TRANSFER.
+   * @throws {HttpException} 404 - When the transaction, account, or category is not found or owned by the user.
+   */
   async update(userId: string, id: string, dto: UpdateTransactionDto) {
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const existing = await tx.transaction.findFirst({
@@ -144,6 +160,23 @@ export class TransactionsService {
       });
       if (!existing) {
         throw new HttpException('Transaction not found', HttpStatus.NOT_FOUND);
+      }
+
+      // TODO: Moved the logics to transfer, will remove this checking later
+      if (existing.transferId) {
+        throw new HttpException(
+          'Transfer legs cannot be updated; use the transfers endpoint',
+          HttpStatus.BAD_REQUEST
+        );
+      }
+
+      const newType = dto.type ?? existing.type;
+      // TODO: Moved the logics to transfer, will remove this checking later
+      if (newType === TransactionType.TRANSFER) {
+        throw new HttpException(
+          'Transfers are created through the transfers endpoint',
+          HttpStatus.BAD_REQUEST
+        );
       }
 
       if (dto.categoryId) {
@@ -159,51 +192,19 @@ export class TransactionsService {
         }
       }
 
-      const newType = dto.type ?? existing.type;
       const newAmount =
         dto.amount !== undefined ? dto.amount : Number(existing.amount);
       const newAccountId = dto.accountId ?? existing.accountId;
-
-      let newFromAccountId: string | null;
-      if (newType === TransactionType.TRANSFER) {
-        newFromAccountId =
-          dto.fromAccountId !== undefined
-            ? dto.fromAccountId
-            : existing.fromAccountId;
-        if (!newFromAccountId) {
-          throw new HttpException(
-            'Source account is required for transfers',
-            HttpStatus.BAD_REQUEST
-          );
-        }
-        if (newFromAccountId === newAccountId) {
-          throw new HttpException(
-            'Source and destination accounts must be different',
-            HttpStatus.BAD_REQUEST
-          );
-        }
-        const fromAccount = await tx.account.findUnique({
-          where: { id: newFromAccountId },
-        });
-        if (
-          !fromAccount ||
-          fromAccount.isDeleted ||
-          fromAccount.userId !== userId
-        ) {
-          throw new HttpException(
-            'Source account not found',
-            HttpStatus.NOT_FOUND
-          );
-        }
-      } else {
-        newFromAccountId = null;
-      }
+      const newDirection =
+        dto.type !== undefined
+          ? this.directionForType(dto.type)
+          : existing.direction;
 
       if (dto.accountId) {
         const account = await tx.account.findUnique({
-          where: { id: dto.accountId },
+          where: { id: dto.accountId, isDeleted: false, userId: userId },
         });
-        if (!account || account.isDeleted || account.userId !== userId) {
+        if (!account) {
           throw new HttpException('Account not found', HttpStatus.NOT_FOUND);
         }
       }
@@ -211,48 +212,59 @@ export class TransactionsService {
       const balanceFieldsChanged =
         dto.amount !== undefined ||
         dto.type !== undefined ||
-        dto.accountId !== undefined ||
-        dto.fromAccountId !== undefined;
+        dto.accountId !== undefined;
 
       if (balanceFieldsChanged) {
         await this.reverseBalanceEffects(tx, existing);
-        await this.applyBalanceEffects(
-          tx,
-          newType,
-          newAmount,
-          newAccountId,
-          newFromAccountId ?? undefined
-        );
+        await this.applyBalanceEffects(tx, {
+          direction: newDirection,
+          amount: newAmount,
+          accountId: newAccountId,
+        });
       }
 
-      const updated = await tx.transaction.update({
+      return tx.transaction.update({
         where: { id },
         data: {
           ...(dto.accountId !== undefined && { accountId: dto.accountId }),
-          ...(dto.type !== undefined && { type: dto.type }),
+          ...(dto.type !== undefined && {
+            type: dto.type,
+            direction: newDirection,
+          }),
           ...(dto.amount !== undefined && { amount: dto.amount }),
           ...(dto.categoryId !== undefined && { categoryId: dto.categoryId }),
           ...(dto.note !== undefined && { note: dto.note }),
           ...(dto.date !== undefined && { date: dto.date }),
-          ...(dto.fromAccountId !== undefined || dto.type !== undefined
-            ? { fromAccountId: newFromAccountId }
-            : {}),
         },
         include: this.include,
       });
-
-      return updated;
     });
   }
 
-  // TODO: Soft delete happens only when it's not a transfer
-  private async remove(userId: string, id: string) {
+  /**
+   * Soft-deletes a transaction, reversing its balance effect. Transfer legs are
+   * immutable here.
+   *
+   * @param userId - The id of the authenticated user.
+   * @param id - The id of the transaction to delete.
+   * @returns The soft-deleted transaction (isDeleted true, deletedAt set).
+   * @throws {HttpException} 400 - When the transaction is a transfer leg.
+   * @throws {HttpException} 404 - When the transaction is not found or not owned by the user.
+   */
+  async remove(userId: string, id: string) {
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const transaction = await tx.transaction.findFirst({
         where: { id, userId, isDeleted: false },
       });
       if (!transaction) {
         throw new HttpException('Transaction not found', HttpStatus.NOT_FOUND);
+      }
+
+      if (transaction.transferId) {
+        throw new HttpException(
+          'Transfer legs cannot be deleted; use the transfers endpoint',
+          HttpStatus.BAD_REQUEST
+        );
       }
 
       await this.reverseBalanceEffects(tx, transaction);
@@ -267,68 +279,63 @@ export class TransactionsService {
     });
   }
 
+  /**
+   * Maps a transaction type to the direction of money flow on its account.
+   *
+   * @param type - The transaction type (INCOME or EXPENSE).
+   * @returns Direction.IN for INCOME, Direction.OUT for EXPENSE.
+   */
+  private directionForType(type: TransactionType): Direction {
+    return type === TransactionType.INCOME ? Direction.IN : Direction.OUT;
+  }
+
+  /**
+   * Undoes the balance effect of an existing transaction on its account: an IN
+   * transaction is reversed with a decrement, an OUT one with an increment.
+   *
+   * @param tx - The Prisma transaction client to run the update on.
+   * @param transaction - The transaction whose balance effect should be reversed.
+   */
   private async reverseBalanceEffects(
     tx: Prisma.TransactionClient,
     transaction: {
-      type: TransactionType;
+      direction: Direction;
       amount: number | Prisma.Decimal;
       accountId: string;
-      fromAccountId: string | null;
     }
   ) {
     const amount = Number(transaction.amount);
-
-    if (transaction.type === TransactionType.INCOME) {
-      await tx.account.update({
-        where: { id: transaction.accountId },
-        data: { balance: { decrement: amount } },
-      });
-    } else if (transaction.type === TransactionType.EXPENSE) {
-      await tx.account.update({
-        where: { id: transaction.accountId },
-        data: { balance: { increment: amount } },
-      });
-    } else if (
-      transaction.type === TransactionType.TRANSFER &&
-      transaction.fromAccountId
-    ) {
-      await tx.account.update({
-        where: { id: transaction.fromAccountId },
-        data: { balance: { increment: amount } },
-      });
-      await tx.account.update({
-        where: { id: transaction.accountId },
-        data: { balance: { decrement: amount } },
-      });
-    }
+    await tx.account.update({
+      where: { id: transaction.accountId },
+      data:
+        // if direction is IN, then reversing means decrementing the balance
+        transaction.direction === Direction.IN
+          ? { balance: { decrement: amount } }
+          : { balance: { increment: amount } },
+    });
   }
 
+  /**
+   * Applies the balance effect of a transaction to its account: IN increments,
+   * OUT decrements.
+   *
+   * @param tx - The Prisma transaction client to run the update on.
+   * @param transaction - The transaction (direction, amount, accountId) whose balance effect to apply.
+   */
   private async applyBalanceEffects(
     tx: Prisma.TransactionClient,
-    type: TransactionType,
-    amount: number,
-    accountId: string,
-    fromAccountId?: string
-  ) {
-    if (type === TransactionType.INCOME) {
-      await tx.account.update({
-        where: { id: accountId },
-        data: { balance: { increment: amount } },
-      });
-    } else if (type === TransactionType.EXPENSE) {
-      await tx.account.update({
-        where: { id: accountId },
-        data: { balance: { decrement: amount } },
-      });
-    } else if (type === TransactionType.TRANSFER && fromAccountId) {
-      await tx.account.update({
-        where: { id: fromAccountId },
-        data: { balance: { decrement: amount } },
-      });
-      await tx.account.update({
-        where: { id: accountId },
-        data: { balance: { increment: amount } },
-      });
+    transaction: {
+      direction: Direction;
+      amount: number | Prisma.Decimal;
+      accountId: string;
     }
+  ) {
+    await tx.account.update({
+      where: { id: transaction.accountId },
+      data:
+        transaction.direction === Direction.IN
+          ? { balance: { increment: transaction.amount } }
+          : { balance: { decrement: transaction.amount } },
+    });
   }
 }

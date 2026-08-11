@@ -114,7 +114,7 @@ model Transaction {
   type      TransactionType
   direction Direction // IN = money into accountId, OUT = money out of accountId
   amount    Decimal         @db.Decimal(12, 2)
-  note      String?
+  note      String? // note for themselves
   date      DateTime
   isDeleted Boolean         @default(false)
 
@@ -134,7 +134,7 @@ model Transfer {
   fromUser   User           @relation("transferSender", fields: [fromUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   toUserId   String
   toUser     User           @relation("transferReceiver", fields: [toUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  memo       String?
+  memo       String? // both share this transfer memo
   status     TransferStatus @default(COMPLETED)
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt

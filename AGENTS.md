@@ -86,6 +86,7 @@ JSDoc comments are written using standard tags:
 ```
 
 - Only add doc comments when explicitly instructed with **"add doc comments"**.
+- No need to build or run tests while adding comments.
 - Do not add doc comments unasked, even as part of other tasks.
 - Use `@description` for class-level JSDoc on controllers, modules, and strategies.
 - Use `@param`, `@returns`, `@throws` on methods.

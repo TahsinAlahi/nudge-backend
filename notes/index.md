@@ -31,6 +31,7 @@
 | 20 | [Batch $transaction vs Promise.all](prisma-batch-vs-promiseall.md) | Consistency vs concurrency for parallel queries |
 | 21 | [Double-Entry Transfers](transaction-double-entry.md) | A transfer is two linked transaction legs, not one row |
 | 22 | [Single-Row Transaction Models](single-row-transaction-model.md) | When one row per transfer works, its pros and cons |
+| 23 | [Transfers: Separate Internal Module](transfers-separate-module.md) | SRP, owning invariants, internal vs public surface |
 
 ---
 
