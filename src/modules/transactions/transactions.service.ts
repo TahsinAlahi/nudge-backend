@@ -19,6 +19,19 @@ export class TransactionsService {
     transfer: true,
   };
 
+  // this filters out the unnecessary fields on create and update
+  private readonly transactionInclude = {
+    id: true,
+    accountId: true,
+    userId: true,
+    categoryId: true,
+    type: true,
+    direction: true,
+    amount: true,
+    note: true,
+    date: true,
+  };
+
   /**
    * Creates an INCOME or EXPENSE transaction and applies its balance effect
    * atomically within a database transaction.
@@ -57,20 +70,20 @@ export class TransactionsService {
         throw new HttpException('Category not found', HttpStatus.NOT_FOUND);
       }
 
-      const direction = this.directionForType(dto.type);
+      const direction = this.directionForType(category.type);
 
       const transaction = await tx.transaction.create({
         data: {
           accountId: dto.accountId,
           userId,
           categoryId: dto.categoryId,
-          type: dto.type,
+          type: category.type,
           direction,
           amount: dto.amount,
           note: dto.note,
           date: dto.date,
         },
-        include: this.include,
+        select: this.transactionInclude,
       });
 
       await this.applyBalanceEffects(tx, transaction);

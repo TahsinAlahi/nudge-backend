@@ -21,7 +21,8 @@ export class CreateTransactionDto {
   categoryId!: string;
 
   @IsEnum(TransactionType)
-  type!: TransactionType;
+  @IsOptional()
+  type?: TransactionType;
 
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0.01)
